@@ -18,7 +18,7 @@ func (h *Handler) FindPets(w http.ResponseWriter, r *http.Request, params spec.F
 		Limit: ptrToValue(params.Limit),
 	}
 
-	pets, err := h.petService.ListPets(ctx, filter)
+	pets, err := h.PetService.ListPets(ctx, filter)
 	if err != nil {
 		renderError(w, r, http.StatusInternalServerError, err)
 		return
@@ -44,7 +44,7 @@ func (h *Handler) AddPet(w http.ResponseWriter, r *http.Request) {
 		Tag:  body.Tag,
 	}
 
-	if err := h.petService.CreatePet(ctx, pet); err != nil {
+	if err := h.PetService.CreatePet(ctx, pet); err != nil {
 		renderError(w, r, http.StatusInternalServerError, err)
 		return
 	}
@@ -57,7 +57,7 @@ func (h *Handler) AddPet(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) DeletePet(w http.ResponseWriter, r *http.Request, id string) {
 	ctx := r.Context()
 
-	if err := h.petService.DeletePet(ctx, id); err != nil {
+	if err := h.PetService.DeletePet(ctx, id); err != nil {
 		renderError(w, r, http.StatusInternalServerError, err)
 		return
 	}
@@ -70,7 +70,7 @@ func (h *Handler) DeletePet(w http.ResponseWriter, r *http.Request, id string) {
 func (h *Handler) FindPetByID(w http.ResponseWriter, r *http.Request, id string) {
 	ctx := r.Context()
 
-	pet, err := h.petService.FindPet(ctx, id)
+	pet, err := h.PetService.FindPet(ctx, id)
 	if err != nil {
 		switch err {
 		case domain.ErrPetNotFound:

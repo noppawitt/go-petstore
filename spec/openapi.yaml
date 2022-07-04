@@ -11,9 +11,27 @@ info:
   license:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
-servers:
-  - url: http://petstore.swagger.io/api
 paths:
+  /ping:
+    get:
+      summary: Ping
+      description:
+        Server connection testing
+      operationId: ping
+      responses:
+        "200":
+          description: pong
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: pong
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /pets:
     get:
       summary: Returns all pets

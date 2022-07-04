@@ -9,14 +9,24 @@ import (
 )
 
 type Handler struct {
-	petService domain.PetService
+	PetService domain.PetService
+}
+
+func NewHandler() *Handler {
+	return &Handler{}
 }
 
 var _ spec.ServerInterface = (*Handler)(nil)
 
+// Ping
+// (GET /ping)
+func (h *Handler) Ping(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("pong"))
+}
+
 func ptrToValue[T any](ptr *T) T {
 	var zeroVal T
-	if ptr != nil {
+	if ptr == nil {
 		return zeroVal
 	}
 
