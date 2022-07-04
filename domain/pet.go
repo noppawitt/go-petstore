@@ -1,6 +1,11 @@
 package domain
 
-import "context"
+import (
+	"context"
+	"errors"
+)
+
+var ErrPetNotFound = errors.New("pet not found")
 
 type Pet struct {
 	ID   string

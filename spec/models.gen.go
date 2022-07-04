@@ -5,11 +5,8 @@ package spec
 
 // Error defines model for Error.
 type Error struct {
-	// Error code
-	Code int32 `json:"code"`
-
 	// Error message
-	Message string `json:"message"`
+	Error string `json:"error"`
 }
 
 // NewPet defines model for NewPet.
@@ -39,7 +36,7 @@ type FindPetsParams struct {
 	Tags *[]string `form:"tags,omitempty" json:"tags,omitempty"`
 
 	// maximum number of results to return
-	Limit *int32 `form:"limit,omitempty" json:"limit,omitempty"`
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // AddPetJSONBody defines parameters for AddPet.

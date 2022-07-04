@@ -1,6 +1,9 @@
 package restapi
 
 import (
+	"net/http"
+
+	"github.com/go-chi/render"
 	"github.com/noppawitt/go-petstore/domain"
 	"github.com/noppawitt/go-petstore/spec"
 )
@@ -18,4 +21,9 @@ func ptrToValue[T any](ptr *T) T {
 	}
 
 	return *ptr
+}
+
+func renderError(w http.ResponseWriter, r *http.Request, code int, err error) {
+	render.Status(r, code)
+	render.JSON(w, r, &spec.Error{Error: err.Error()})
 }

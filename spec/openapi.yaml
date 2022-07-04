@@ -39,7 +39,7 @@ paths:
           required: false
           schema:
             type: integer
-            format: int32
+            x-go-type: int
       responses:
         "200":
           description: pet response
@@ -149,13 +149,8 @@ components:
 
     Error:
       required:
-        - code
-        - message
+        - error
       properties:
-        code:
-          type: integer
-          format: int32
-          description: Error code
-        message:
+        error:
           type: string
           description: Error message
