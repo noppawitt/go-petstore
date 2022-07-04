@@ -1,4 +1,5 @@
 package: spec
-output: models.gen.go
+output: server.gen.go
 generate:
-  models: true
+  chi-server: true
+  embedded-spec: true

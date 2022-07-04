@@ -15,162 +15,303 @@ import (
 
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/labstack/echo/v4"
+	"github.com/go-chi/chi/v5"
 )
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Returns all pets
 	// (GET /pets)
-	FindPets(ctx echo.Context, params FindPetsParams) error
+	FindPets(w http.ResponseWriter, r *http.Request, params FindPetsParams)
 	// Creates a new pet
 	// (POST /pets)
-	AddPet(ctx echo.Context) error
+	AddPet(w http.ResponseWriter, r *http.Request)
 	// Deletes a pet by ID
 	// (DELETE /pets/{id})
-	DeletePet(ctx echo.Context, id int64) error
+	DeletePet(w http.ResponseWriter, r *http.Request, id string)
 	// Returns a pet by ID
 	// (GET /pets/{id})
-	FindPetByID(ctx echo.Context, id int64) error
+	FindPetByID(w http.ResponseWriter, r *http.Request, id string)
 }
 
-// ServerInterfaceWrapper converts echo contexts to parameters.
+// ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
-	Handler ServerInterface
+	Handler            ServerInterface
+	HandlerMiddlewares []MiddlewareFunc
+	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
 }
 
-// FindPets converts echo context to params.
-func (w *ServerInterfaceWrapper) FindPets(ctx echo.Context) error {
+type MiddlewareFunc func(http.HandlerFunc) http.HandlerFunc
+
+// FindPets operation middleware
+func (siw *ServerInterfaceWrapper) FindPets(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params FindPetsParams
-	// ------------- Optional query parameter "tags" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "tags", ctx.QueryParams(), &params.Tags)
+	// ------------- Optional query parameter "tags" -------------
+	if paramValue := r.URL.Query().Get("tags"); paramValue != "" {
+
+	}
+
+	err = runtime.BindQueryParameter("form", true, false, "tags", r.URL.Query(), &params.Tags)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tags: %s", err))
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "tags", Err: err})
+		return
 	}
 
 	// ------------- Optional query parameter "limit" -------------
+	if paramValue := r.URL.Query().Get("limit"); paramValue != "" {
 
-	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
 	}
 
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.FindPets(ctx, params)
-	return err
+	err = runtime.BindQueryParameter("form", true, false, "limit", r.URL.Query(), &params.Limit)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.FindPets(w, r, params)
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(ctx))
 }
 
-// AddPet converts echo context to params.
-func (w *ServerInterfaceWrapper) AddPet(ctx echo.Context) error {
-	var err error
+// AddPet operation middleware
+func (siw *ServerInterfaceWrapper) AddPet(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.AddPet(ctx)
-	return err
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddPet(w, r)
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(ctx))
 }
 
-// DeletePet converts echo context to params.
-func (w *ServerInterfaceWrapper) DeletePet(ctx echo.Context) error {
+// DeletePet operation middleware
+func (siw *ServerInterfaceWrapper) DeletePet(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	var err error
+
 	// ------------- Path parameter "id" -------------
-	var id int64
+	var id string
 
-	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
+	err = runtime.BindStyledParameter("simple", false, "id", chi.URLParam(r, "id"), &id)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
 	}
 
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.DeletePet(ctx, id)
-	return err
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeletePet(w, r, id)
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(ctx))
 }
 
-// FindPetByID converts echo context to params.
-func (w *ServerInterfaceWrapper) FindPetByID(ctx echo.Context) error {
+// FindPetByID operation middleware
+func (siw *ServerInterfaceWrapper) FindPetByID(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	var err error
-	// ------------- Path parameter "id" -------------
-	var id int64
 
-	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameter("simple", false, "id", chi.URLParam(r, "id"), &id)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
 	}
 
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.FindPetByID(ctx, id)
-	return err
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.FindPetByID(w, r, id)
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(ctx))
 }
 
-// This is a simple interface which specifies echo.Route addition functions which
-// are present on both echo.Echo and echo.Group, since we want to allow using
-// either of them for path registration
-type EchoRouter interface {
-	CONNECT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	DELETE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	GET(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	HEAD(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	OPTIONS(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	PATCH(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	POST(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	PUT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	TRACE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+type UnescapedCookieParamError struct {
+	ParamName string
+	Err       error
 }
 
-// RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router EchoRouter, si ServerInterface) {
-	RegisterHandlersWithBaseURL(router, si, "")
+func (e *UnescapedCookieParamError) Error() string {
+	return fmt.Sprintf("error unescaping cookie parameter '%s'", e.ParamName)
 }
 
-// Registers handlers, and prepends BaseURL to the paths, so that the paths
-// can be served under a prefix.
-func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string) {
+func (e *UnescapedCookieParamError) Unwrap() error {
+	return e.Err
+}
 
+type UnmarshalingParamError struct {
+	ParamName string
+	Err       error
+}
+
+func (e *UnmarshalingParamError) Error() string {
+	return fmt.Sprintf("Error unmarshaling parameter %s as JSON: %s", e.ParamName, e.Err.Error())
+}
+
+func (e *UnmarshalingParamError) Unwrap() error {
+	return e.Err
+}
+
+type RequiredParamError struct {
+	ParamName string
+}
+
+func (e *RequiredParamError) Error() string {
+	return fmt.Sprintf("Query argument %s is required, but not found", e.ParamName)
+}
+
+type RequiredHeaderError struct {
+	ParamName string
+	Err       error
+}
+
+func (e *RequiredHeaderError) Error() string {
+	return fmt.Sprintf("Header parameter %s is required, but not found", e.ParamName)
+}
+
+func (e *RequiredHeaderError) Unwrap() error {
+	return e.Err
+}
+
+type InvalidParamFormatError struct {
+	ParamName string
+	Err       error
+}
+
+func (e *InvalidParamFormatError) Error() string {
+	return fmt.Sprintf("Invalid format for parameter %s: %s", e.ParamName, e.Err.Error())
+}
+
+func (e *InvalidParamFormatError) Unwrap() error {
+	return e.Err
+}
+
+type TooManyValuesForParamError struct {
+	ParamName string
+	Count     int
+}
+
+func (e *TooManyValuesForParamError) Error() string {
+	return fmt.Sprintf("Expected one value for %s, got %d", e.ParamName, e.Count)
+}
+
+// Handler creates http.Handler with routing matching OpenAPI spec.
+func Handler(si ServerInterface) http.Handler {
+	return HandlerWithOptions(si, ChiServerOptions{})
+}
+
+type ChiServerOptions struct {
+	BaseURL          string
+	BaseRouter       chi.Router
+	Middlewares      []MiddlewareFunc
+	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+}
+
+// HandlerFromMux creates http.Handler with routing matching OpenAPI spec based on the provided mux.
+func HandlerFromMux(si ServerInterface, r chi.Router) http.Handler {
+	return HandlerWithOptions(si, ChiServerOptions{
+		BaseRouter: r,
+	})
+}
+
+func HandlerFromMuxWithBaseURL(si ServerInterface, r chi.Router, baseURL string) http.Handler {
+	return HandlerWithOptions(si, ChiServerOptions{
+		BaseURL:    baseURL,
+		BaseRouter: r,
+	})
+}
+
+// HandlerWithOptions creates http.Handler with additional options
+func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handler {
+	r := options.BaseRouter
+
+	if r == nil {
+		r = chi.NewRouter()
+	}
+	if options.ErrorHandlerFunc == nil {
+		options.ErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+	}
 	wrapper := ServerInterfaceWrapper{
-		Handler: si,
+		Handler:            si,
+		HandlerMiddlewares: options.Middlewares,
+		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
-	router.GET(baseURL+"/pets", wrapper.FindPets)
-	router.POST(baseURL+"/pets", wrapper.AddPet)
-	router.DELETE(baseURL+"/pets/:id", wrapper.DeletePet)
-	router.GET(baseURL+"/pets/:id", wrapper.FindPetByID)
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/pets", wrapper.FindPets)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/pets", wrapper.AddPet)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/pets/{id}", wrapper.DeletePet)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/pets/{id}", wrapper.FindPetByID)
+	})
 
+	return r
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"3d3v/hYAAP//wO3O5VcSAAA=",
+	"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",
+	"ZCESAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

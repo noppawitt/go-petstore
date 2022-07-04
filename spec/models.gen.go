@@ -24,7 +24,7 @@ type NewPet struct {
 // Pet defines model for Pet.
 type Pet struct {
 	// Unique id of the pet
-	Id int64 `json:"id"`
+	Id string `json:"id"`
 
 	// Name of the pet
 	Name string `json:"name"`

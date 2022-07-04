@@ -1,22 +1,31 @@
 package restapi
 
 import (
-	"github.com/labstack/echo/v4"
+	"net/http"
+
 	"github.com/noppawitt/go-petstore/spec"
 )
 
-func (h *Handler) FindPets(ctx echo.Context, params spec.FindPetsParams) error {
-	panic("not implemented")
+// Returns all pets
+// (GET /pets)
+func (h *Handler) FindPets(w http.ResponseWriter, r *http.Request, params spec.FindPetsParams) {
+	panic("not implemented") // TODO: Implement
 }
 
-func (h *Handler) AddPet(ctx echo.Context) error {
-	panic("not implemented")
+// Creates a new pet
+// (POST /pets)
+func (h *Handler) AddPet(w http.ResponseWriter, r *http.Request) {
+	panic("not implemented") // TODO: Implement
 }
 
-func (h *Handler) DeletePet(ctx echo.Context, id int64) error {
-	panic("not implemented")
+// Deletes a pet by ID
+// (DELETE /pets/{id})
+func (h *Handler) DeletePet(w http.ResponseWriter, r *http.Request, id string) {
+	panic("not implemented") // TODO: Implement
 }
 
-func (h *Handler) FindPetByID(ctx echo.Context, id int64) error {
-	panic("not implemented")
+// Returns a pet by ID
+// (GET /pets/{id})
+func (h *Handler) FindPetByID(w http.ResponseWriter, r *http.Request, id string) {
+	panic("not implemented") // TODO: Implement
 }
